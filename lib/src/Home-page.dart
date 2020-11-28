@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
@@ -9,6 +10,8 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
+  final Dio _dio = Dio();
+  final String _url = 'http://10.0.0.176:3338/check';
   List _funcionarios = [
     'Emilson Lima',
     'Walmir Carvalho',
@@ -20,7 +23,16 @@ class HomePageState extends State<HomePage> {
   List<DropdownMenuItem<String>> _dropDownMenuItems;
   String _setCurrentFuncionario;
   String codeScannerValue = '';
-  String numped = '';
+  String _numped = '';
+  String _posicao = '';
+
+  Future<void> postNumped() async {
+    await _dio.post(_url, data: {
+      "nome": _setCurrentFuncionario,
+      "numped": _numped,
+      "posicao": _posicao
+    });
+  }
 
   Future<void> getBarcode() async {
     codeScannerValue = await FlutterBarcodeScanner.scanBarcode(
@@ -30,12 +42,13 @@ class HomePageState extends State<HomePage> {
       ScanMode.DEFAULT,
     );
 
+    if (codeScannerValue == '-1') codeScannerValue = '';
+
     setState(() {
-      numped = codeScannerValue;
+      _numped = codeScannerValue;
     });
   }
 
-  var formatter = DateFormat("yyyy-MM-dd");
   String horaFormat = DateFormat.HOUR24_MINUTE_SECOND;
   String _hrinico;
 
@@ -87,7 +100,7 @@ class HomePageState extends State<HomePage> {
             Container(
                 margin: EdgeInsets.only(top: 10),
                 child: Text(
-                  '$numped $_hrinico',
+                  '$_numped $_hrinico',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 )),
             Divider(),
@@ -107,11 +120,13 @@ class HomePageState extends State<HomePage> {
           var sec = DateTime.now().second;
           String horAtual = ('$hor:$min:$sec');
 
+          if (_setCurrentFuncionario != '') {
+            postNumped();
+          }
+
           setState(() {
             _hrinico = horAtual;
           });
-
-          print(horAtual);
         },
       ),
     );
